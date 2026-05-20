@@ -17,7 +17,4 @@ plant_fits2= lapply(plant_list, fit_plant_model,data= kobb_plant_dat, model= pla
 preds_plant=lapply(plant_list, plot_plant_preds, data=kobb_plant_dat)
 
 #diagnistics
-peak_diag <- diagnose_peak_parameters(species_name = "Angelica_archangelica",
-                                      data = kobb_plant_dat)
-
 peak_diag=lapply(plant_list, diagnose_peak_parameters, kobb_plant_dat)
