@@ -22,5 +22,25 @@ kobb_plant_dat=kobb_plant%>%
 kobb_plant_dat$abundance[is.na(kobb_plant_dat$abundance)] <- 0
 kobb_plant_dat$DOYs = scale(kobb_plant_dat$DOY, center = TRUE, scale = TRUE)[,1]
 
-plant_list=unique(kobb_plant_dat$taxon)
+#data filtering####
 
+#remove spp. with <1000 individuals total
+
+kobb_plant_dat_tot=kobb_plant_dat%>%
+  group_by(taxon)%>%summarise(tot=sum(abundance))%>%
+  filter(tot< 1000)
+
+kobb_list1=c(unique(kobb_plant_dat_tot$taxon))
+
+kobb_dat1=kobb_plant_dat%>%filter(!taxon%in%kobb_list1)
+
+#remove spp with <50+ indivs per year
+
+kobb_dat1_sum=kobb_dat1%>%group_by(taxon, year)%>%
+  summarise(tot=sum(abundance))%>%
+  mutate(include=if_else(tot<50, "no", "yes"))
+
+kobb_dat2=kobb_plant_dat%>%left_join(kobb_dat1_sum)%>%
+  filter(!include=="no")
+
+plant_list=unique(kobb_dat2$taxon)

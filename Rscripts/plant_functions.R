@@ -63,11 +63,15 @@ plot_plant_preds <- function(species_name, data,
   # Subset data
   sp_df <- dplyr::filter(data, taxon == species_name)
 
-  mu         <- fit$draws("mu", format="draws_matrix")
-  width      <- fit$draws("width", format="draws_matrix")
+  # mu         <- fit$draws("mu", format="draws_matrix")
+  # width      <- fit$draws("width", format="draws_matrix")
   alpha_year <- fit$draws("alpha_year", format="draws_matrix")
   u_plot     <- fit$draws("u_plot", format="draws_matrix")
-  u_plot_mu  <- fit$draws("u_plot_mu", format="draws_matrix")
+
+  alpha_draws <- as.numeric(fit$draws("alpha", format = "draws_matrix"))
+  mu_draws    <- as.numeric(fit$draws("mu", format = "draws_matrix"))
+  width_draws <- as.numeric(fit$draws("width", format = "draws_matrix"))
+##  u_plot_mu  <- fit$draws("u_plot_mu", format="draws_matrix")
 
   # Setup
   #log_obs_days <- log(mean(sp_df$TrapDays, na.rm = TRUE))
@@ -93,10 +97,16 @@ plot_plant_preds <- function(species_name, data,
       eta_hat <- numeric(length(DOY))
 
       for (nd in seq_along(DOY)) {
-        eta_post <- exp(alpha_year[, y_idx] + u_plot[, pl_idx] -
-                          ((DOY[nd] - (mu[, y_idx] + u_plot_mu[, pl_idx]))^2 / (width[, y_idx]^2)))
+        # eta_post <- exp(alpha_year[, y_idx] + u_plot[, pl_idx] -
+        #                   ((DOY[nd] - (mu[, y_idx] + u_plot_mu[, pl_idx]))^2 / (width[, y_idx]^2)))
+        eta_post <-
+          alpha_draws +
+          alpha_year[, y_idx] +
+          u_plot[, pl_idx] -
+          ((DOY[nd] - mu_draws)^2 / (width_draws^2))
 
-        eta_hat[nd] <- median(eta_post)
+        abundance_post <- exp(eta_post)
+        eta_hat[nd] <- median(abundance_post)
       }
 
       if (pl == 1) {

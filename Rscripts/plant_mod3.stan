@@ -21,9 +21,13 @@ parameters {
   vector[Nplots] u_plot_raw;
   real<lower=0> sigma_plot;
 
-  // Phenology curve
-  real mu;                 // peak timing, standardized DOY
-  real<lower=0> width;     // phenology width
+  // Year-specific peak timing
+  real mu_bar;
+  vector[Nyr] mu_year_raw;
+  real<lower=0> sigma_mu_year;
+
+  // Shared phenology width
+  real<lower=0> width;
 
   // Negative binomial dispersion
   real<lower=0> phi;
@@ -32,22 +36,25 @@ parameters {
 transformed parameters {
   vector[Nyr] alpha_year;
   vector[Nplots] u_plot;
+  vector[Nyr] mu_year;
   vector[N] eta;
 
   alpha_year = sigma_year * alpha_year_raw;
   u_plot = sigma_plot * u_plot_raw;
+
+  mu_year = mu_bar + sigma_mu_year * mu_year_raw;
 
   for (n in 1:N) {
     eta[n] =
       alpha +
       alpha_year[year_id[n]] +
       u_plot[plot_id[n]] -
-      square(DOYs[n] - mu) / square(width);
+      square(DOYs[n] - mu_year[year_id[n]]) / square(width);
   }
 }
 
 model {
-  // Priors
+  // Abundance priors
   alpha ~ normal(0, 5);
 
   alpha_year_raw ~ normal(0, 1);
@@ -56,9 +63,15 @@ model {
   u_plot_raw ~ normal(0, 1);
   sigma_plot ~ normal(0, 1);
 
-  mu ~ normal(0, 2);
+  // Peak timing priors
+  mu_bar ~ normal(0, 1.5);
+  mu_year_raw ~ normal(0, 1);
+  sigma_mu_year ~ normal(0, 0.5);
+
+  // Width prior
   width ~ normal(1, 0.5);
 
+  // Dispersion
   phi ~ exponential(1);
 
   // Likelihood
